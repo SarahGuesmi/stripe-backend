@@ -59,6 +59,35 @@ app.post('/calculate-shipping', async (req, res) => {
         async: false
       })
     });
+    app.post('/create-payment-link', async (req, res) => {
+  try {
+    const { amount, currency } = req.body;
+    
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: currency || 'eur',
+          product_data: {
+            name: 'FitSense Order',
+          },
+          unit_amount: Math.round(amount * 100),
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: 'https://fitsense.app/success',
+      cancel_url: 'https://fitsense.app/cancel',
+    });
+
+    res.json({ 
+      url: session.url,
+      sessionId: session.id
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
     const data = await response.json();
     const rates = data.rates.map(r => ({
       provider: r.provider,
