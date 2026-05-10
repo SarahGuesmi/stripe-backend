@@ -8,13 +8,26 @@ app.use(express.json());
 
 app.post('/create-payment-intent', async (req, res) => {
   try {
-    const { amount, currency } = req.body;
+    console.log('Body received:', req.body);
+    
+    const amount = req.body?.amount || req.query?.amount;
+    const currency = req.body?.currency || 'tnd';
+
+    if (!amount) {
+      return res.status(400).json({ error: 'Amount is required' });
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
-      currency: currency || 'tnd',
+      amount: Math.round(Number(amount) * 100),
+      currency: currency,
     });
-    res.json({ clientSecret: paymentIntent.client_secret });
+
+    res.json({ 
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
+    });
   } catch (err) {
+    console.error('Stripe error:', err.message);
     res.status(400).json({ error: err.message });
   }
 });
